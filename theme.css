@@ -1,0 +1,432 @@
+/*
+  theme.css — Adventureモードの「探索マップ」ビジュアル。
+  Beginner=Grassland / Intermediate=Desert Ruins / Expert=Volcanic Ruins。
+
+  設計方針:
+  - 切り替えはCSSの :has() だけで行う。JSは一切追加しない
+    （game.js / extras.js が既に更新している「モード・難易度ボタンの
+    aria-pressed状態」を、このCSSが読み取っているだけ）。
+  - Classicのときは何も変わらない。すべてのテーマ用カスタムプロパティ
+    (--board-xxx等)はAdventure+対応する難易度のときだけbodyに定義され、
+    未定義のときは var(--board-xxx, 元のstyle.css相当の値) のフォールバック
+    で元の見た目に解決される。つまりClassicは常に無変更。
+  - 盤面(.board/.cell)にもAdventureのときだけ背景色・数字色を適用する
+    （Volcanicのみ、開封済みマスが暗いため数字色も専用の明るい配色に
+    差し替えている。他2テーマは明るい地面色のため既存の数字色のままで
+    十分なコントラストが取れる）。
+  - 背景シーン(.theme-scene)は position:fixed のレイヤーで、盤面より
+    手前に出ることは絶対にない(z-index:-1)。
+  - 前景の小さな挿絵(.theme-accent)は .ms-app の左右の余白付近だけに置き、
+    幅の狭い画面では非表示にする(盤面・ボタンの邪魔をしないため)。
+*/
+
+.ms-app {
+  position: relative;
+}
+
+/* ---------------------------------- Scene (background) ---------------------------------- */
+
+.theme-scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.theme-scene svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------------------------------- Accent (foreground illustrations) ---------------------------------- */
+
+.theme-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.accent-icon {
+  position: absolute;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(20, 40, 63, 0.1));
+}
+
+@media (max-width: 700px) {
+  .theme-accent {
+    display: none;
+  }
+}
+
+/* ---------------------------------- Activation ---------------------------------- */
+/* Adventure(data-mode="meadow") + 各難易度が選択されているときだけ、
+   対応するシーン／挿絵を表示する。内部識別子は "meadow" のまま
+   （表示名だけ Adventure）という前回の決定を踏襲している。 */
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="beginner"][aria-pressed="true"]) .theme-scene-grassland,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="beginner"][aria-pressed="true"]) .theme-accent-grassland {
+  opacity: 1;
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="intermediate"][aria-pressed="true"]) .theme-scene-desert,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="intermediate"][aria-pressed="true"]) .theme-accent-desert {
+  opacity: 1;
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .theme-scene-volcanic,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .theme-accent-volcanic {
+  opacity: 1;
+}
+
+/* ---------------------------------- Board coloring (Adventure only) ---------------------------------- */
+/*
+  Classicのときはどのカスタムプロパティも定義されないため、下の
+  var(--board-xxx, フォールバック値) は常に元のstyle.cssと同じ値に
+  解決される＝Classicの盤面は一切変わらない。
+
+  数字(1〜8)は Grassland/Desert では明るい地面色の上に乗るため、
+  既存の配色（style.css由来のフォールバック）のままで十分なコントラストが
+  取れる。Volcanicだけは開封済みマスが暗い岩色になるため、明るい専用の
+  配色に個別で差し替えている。
+*/
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="beginner"][aria-pressed="true"]) {
+  --board-hidden-bg: #79b95c;
+  --board-hidden-hover-bg: #8fcf72;
+  --board-revealed-bg: #eef6df;
+  --board-grid-line: #5c9a48;
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="intermediate"][aria-pressed="true"]) {
+  --board-hidden-bg: #d9a55a;
+  --board-hidden-hover-bg: #e6bb78;
+  --board-revealed-bg: #f8e6c2;
+  --board-grid-line: #a8763f;
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) {
+  /* 「暗い火山」ではなく「明るさのある火山・赤熱した岩」を目指し、
+     背景より一段明るい岩色を未開封に、さらに明るい岩色を開封済みに
+     割り当てる。境界線も黒に近い色ではなく、はっきり見えるグレーに
+     している（ただし数字より主張しない程度に留める）。 */
+  --board-hidden-bg: #413a3d;
+  --board-hidden-hover-bg: #524a4e;
+  --board-revealed-bg: #6e6468;
+  --board-grid-line: #877b7f;
+  --board-count-1: #d3ecff;
+  --board-count-2: #c4f3cf;
+  --board-count-3: #ffe0d6;
+  --board-count-4: #efe6ff;
+  --board-count-5: #ffe3ac;
+  --board-count-6: #bcf1f1;
+  --board-count-7: #fffaf4;
+  --board-count-8: #ece6e1;
+}
+
+.board {
+  background: var(--board-grid-line, var(--color-line));
+  border-color: var(--board-grid-line, var(--color-line));
+}
+
+.cell {
+  background: var(--board-hidden-bg, var(--color-bg));
+  /* --board-cell-shadow はClassicの各テーマ(Paper/Steel/Dark Steel)が
+     minesweeper/classic-theme.css 側で定義する「素材感」用。未定義なら
+     noneのままなので、Adventureや今後定義しないテーマには影響しない。 */
+  box-shadow: var(--board-cell-shadow, none);
+}
+
+.cell.is-revealed {
+  background: var(--board-revealed-bg, var(--color-bg-alt));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cell.is-hidden:hover {
+    background: var(--board-hidden-hover-bg, var(--color-accent-light));
+  }
+}
+
+.cell[data-count="1"] {
+  color: var(--board-count-1, var(--color-accent));
+}
+.cell[data-count="2"] {
+  color: var(--board-count-2, #2f7d5c);
+}
+.cell[data-count="3"] {
+  color: var(--board-count-3, #b23b3b);
+}
+.cell[data-count="4"] {
+  color: var(--board-count-4, #4a3f8f);
+}
+.cell[data-count="5"] {
+  color: var(--board-count-5, #8a4b1f);
+}
+.cell[data-count="6"] {
+  color: var(--board-count-6, #1f8a8a);
+}
+.cell[data-count="7"] {
+  color: var(--board-count-7, var(--color-navy));
+}
+.cell[data-count="8"] {
+  color: var(--board-count-8, var(--color-text-sub));
+}
+
+/* ---------------------------------- Grassland (Beginner) ---------------------------------- */
+
+.accent-tree {
+  top: -6px;
+  left: 2px;
+  width: 46px;
+  height: 54px;
+}
+
+.accent-butterfly {
+  top: 2px;
+  right: 6px;
+  width: 44px;
+  height: 34px;
+  animation: ms-butterfly-flutter 3.4s ease-in-out infinite;
+}
+
+.accent-flower {
+  top: 58px;
+  left: -2px;
+  width: 26px;
+  height: 34px;
+}
+
+.accent-rock-grassland {
+  top: 64px;
+  right: -4px;
+  width: 34px;
+  height: 20px;
+}
+
+@keyframes ms-butterfly-flutter {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(-4deg);
+  }
+  50% {
+    transform: translate(-4px, -10px) rotate(4deg);
+  }
+}
+
+/* ---------------------------------- Desert Ruins (Intermediate) ---------------------------------- */
+
+.accent-camel {
+  top: 4px;
+  right: -2px;
+  width: 78px;
+  height: 52px;
+}
+
+.accent-cactus {
+  top: 6px;
+  left: 4px;
+  width: 30px;
+  height: 42px;
+}
+
+.accent-rock-desert {
+  top: 60px;
+  right: 14px;
+  width: 34px;
+  height: 20px;
+}
+
+/* ---------------------------------- Volcanic Ruins (Expert) ---------------------------------- */
+
+.accent-pillar {
+  top: -4px;
+  left: 6px;
+  width: 26px;
+  height: 56px;
+}
+
+.accent-ember {
+  animation: ms-ember-pulse 2s ease-in-out infinite;
+}
+
+.accent-ember-a {
+  top: 8px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+}
+
+.accent-ember-b {
+  top: 40px;
+  right: 42px;
+  width: 14px;
+  height: 14px;
+  animation-delay: 0.4s;
+}
+
+.accent-rock-volcanic {
+  top: 62px;
+  left: -2px;
+  width: 34px;
+  height: 20px;
+}
+
+@keyframes ms-ember-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.volcano-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ms-crater-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes ms-crater-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.volcano-smoke {
+  animation: ms-smoke-drift 6s ease-in-out infinite;
+}
+
+@keyframes ms-smoke-drift {
+  0% {
+    opacity: 0.15;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translateY(-14px);
+  }
+  100% {
+    opacity: 0.15;
+    transform: translateY(0);
+  }
+}
+
+/* 溶岩の中心の明るい筋だけを、ごくゆっくり明滅させる（光の揺らぎ程度）。 */
+.volcano-lava-core {
+  animation: ms-lava-glow 3.2s ease-in-out infinite;
+}
+
+@keyframes ms-lava-glow {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accent-butterfly,
+  .accent-ember,
+  .volcano-glow,
+  .volcano-smoke,
+  .volcano-lava-core {
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------- Volcanic: UI text readability ---------------------------------- */
+/*
+  Volcanicは背景が非常に暗いため、その上に乗る文字がもともと白背景を
+  前提にした色（濃紺・グレー等）のままだと読めなくなる。
+  「暗い背景＋明るいUI」を徹底するため、ヘッダー／ゲームカード／
+  フッターに半透明の暗いパネルを敷いた上で、その中の文字色を
+  すべて明るい配色に個別で上書きする。Classic/Grassland/Desertには
+  一切影響しない（同じ:has()条件でExpert difficultyのときだけ有効）。
+*/
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-header {
+  background: rgba(56, 44, 42, 0.9);
+  border-bottom-color: rgba(255, 255, 255, 0.2);
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-app {
+  background: rgba(58, 46, 44, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 24px;
+  padding: 28px 20px;
+}
+
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-footer {
+  background: rgba(56, 44, 42, 0.9);
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 明るいアクセント色（見出し・メッセージ・フッターリンク・記録タイム） */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-title,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-heading,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-message,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-footer a,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-table td:last-child {
+  color: #ffcf94;
+}
+
+/* もっとも明るい主要テキスト（残り地雷／タイマーの数値、記録の名前・欄） */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .status-value,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-table td {
+  color: #fff3e2;
+}
+
+/* 見出しラベル・入力欄ラベル（中間の明るさ） */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .selector-label,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .player-name-field,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .feedback-field label,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .feedback-status,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .share-score-status {
+  color: #e3d3c7;
+}
+
+/* 補助的な薄いテキスト（ヒント・小さな注記） */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .status-label,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-hint,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-table th,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-empty,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .feedback-optional {
+  color: #b7a89c;
+}
+
+/* 勝敗メッセージ・Feedback送信結果は状態ごとに明るい色を維持する */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-message.is-win,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .feedback-status.is-success {
+  color: #8fe3a0;
+}
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-message.is-lose,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .feedback-status.is-error {
+  color: #ff8a72;
+}
+
+/* 枠線・区切り線を暗いパネルに合わせて明るめに調整 */
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .status-bar,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-table th,
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .recent-games-table td {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+body:has(.pill-btn[data-mode="meadow"][aria-pressed="true"]):has(.pill-btn[data-difficulty="expert"][aria-pressed="true"]) .ms-divider {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}

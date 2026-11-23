@@ -1,0 +1,808 @@
+/*
+  Minesweeper — スタンドアロンページ用スタイル。
+  既存ポートフォリオの css/*.css には依存せず、
+  同じトーン（白ベース・紺+ブルーのアクセント・余白広め）を
+  このファイル単体で再現する。
+*/
+
+:root {
+  --color-bg: #ffffff;
+  --color-bg-alt: #f4f7fb;
+  --color-navy: #14283f;
+  --color-accent: #2f5f9e;
+  --color-accent-light: #eaf1f8;
+  --color-text: #1b2635;
+  --color-text-sub: #51607a;
+  --color-text-faint: #8a97ad;
+  --color-line: #dde3ec;
+
+  --color-win: #2f7d5c;
+  --color-lose: #b23b3b;
+  --color-wrong-bg: #f6ece7;
+
+  --font-en: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-ja: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+
+  --transition-fast: 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* hidden 属性を常に優先する。display を指定した要素や、ブラウザ標準の
+   [hidden] スタイルが効かない SVG 要素も確実に非表示にする。 */
+[hidden] {
+  display: none !important;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ja);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.en {
+  font-family: var(--font-en);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ---------------------------------- Header ---------------------------------- */
+
+.ms-header {
+  border-bottom: 1px solid var(--color-line);
+}
+
+.ms-header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ms-title {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-navy);
+}
+
+/* ---------------------------------- Main ---------------------------------- */
+
+.ms-main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: clamp(48px, 8vw, 96px) 20px;
+}
+
+.ms-app {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  text-align: center;
+}
+
+.ms-heading {
+  margin: 0;
+  font-family: var(--font-en);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+/* ---------------------------------- Selectors (Game Mode / Difficulty) ---------------------------------- */
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.selector-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.pill-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px;
+  background: var(--color-bg-alt);
+  border-radius: 999px;
+}
+
+.pill-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: none;
+  background: transparent;
+  padding: 10px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--color-text-sub);
+  transition: background var(--transition-fast), color var(--transition-fast), transform 0.1s ease;
+}
+
+.pill-btn:hover {
+  color: var(--color-navy);
+}
+
+.pill-btn[aria-pressed="true"] {
+  background: var(--color-navy);
+  color: #ffffff;
+}
+
+.pill-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 「押した感」：GAME MODE / DIFFICULTY / ACTION / Classic Themeの
+   すべてのピルボタンで共通の、ごく小さな沈み込みフィードバック。 */
+.pill-btn:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+.pill-sub {
+  font-family: var(--font-en);
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  opacity: 0.75;
+}
+
+/* ACTION（DIG/FLAG）はサブテキストを持たない1行ボタンなので、
+   .pill-btn の縦積みレイアウトを横並びに上書きする。 */
+.action-btn {
+  flex-direction: row;
+  gap: 6px;
+}
+
+/* ---------------------------------- Status bar ---------------------------------- */
+
+.status-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.status-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.status-value {
+  font-family: var(--font-en);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-navy);
+}
+
+.restart-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--color-navy);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform 0.1s ease;
+}
+
+.restart-btn:hover,
+.restart-btn:focus-visible {
+  background: var(--color-navy);
+  color: #ffffff;
+  border-color: var(--color-navy);
+}
+
+.restart-btn:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* ---------------------------------- Message ---------------------------------- */
+
+.ms-message {
+  min-height: 1.4em;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.ms-message.is-win {
+  color: var(--color-win);
+}
+
+.ms-message.is-lose {
+  color: var(--color-lose);
+}
+
+/* ---------------------------------- Personal Best ---------------------------------- */
+/* 色は .status-label / .status-value / .ms-message.is-win をそのまま
+   継承しているため、ここでは配置とアニメーションだけを定義する
+   （Classic/Adventureの各テーマ側で自動的に見た目が馴染む）。 */
+
+.personal-best-bar {
+  display: flex;
+  justify-content: center;
+}
+
+/* ラベルと王冠を1つの単位として扱う。王冠は currentColor で
+   .status-label の文字色（各テーマで既にコントラスト確認済み）を
+   そのまま引き継ぐため、テーマ別の配色調整は不要。 */
+.personal-best-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.personal-best-crown {
+  width: 13px;
+  height: 11px;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+/* 自己ベスト更新時だけ、王冠をごく軽く強調する（拍動1回のみ）。 */
+.personal-best-crown.is-celebrating {
+  animation: ms-crown-pulse 0.6s ease-out;
+}
+
+@keyframes ms-crown-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.personal-best-new {
+  margin: 0;
+  font-size: 0.85rem;
+  animation: ms-pb-pop 0.4s ease-out;
+}
+
+@keyframes ms-pb-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personal-best-new,
+  .personal-best-crown.is-celebrating {
+    animation: none;
+  }
+}
+
+/* ---------------------------------- Share Score ---------------------------------- */
+/* ボタンは既存の .restart-btn をそのまま流用しているため、Classic各
+   テーマの配色（classic-theme.css）を自動的に引き継ぐ。ここでは
+   表示位置・アイコンの切り替え・フィードバック文言の見た目だけを
+   定義する。クリア前は #share-score-bar に hidden 属性が付いており
+   非表示（share-score.jsが勝利時のみ解除する）。 */
+
+.share-score-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-score-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.share-score-status {
+  min-height: 1.1em;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-sub);
+}
+
+/* ---------------------------------- Board ---------------------------------- */
+
+.board-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 4px;
+}
+
+.board {
+  display: grid;
+  gap: 2px;
+  width: max-content;
+  margin: 0 auto;
+  padding: 2px;
+  background: var(--color-line);
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* デスクトップ基準の最大セルサイズ（game.js の MAX_CELL_SIZE と対応）。
+   実際の表示サイズは game.js がビューポート幅に応じて計算し、
+   インラインスタイルでこの値を上書きする。 */
+.board[data-difficulty="beginner"] {
+  --cell-size: 42px;
+}
+
+.board[data-difficulty="intermediate"] {
+  --cell-size: 32px;
+}
+
+.board[data-difficulty="expert"] {
+  --cell-size: 26px;
+}
+
+.row {
+  display: contents;
+}
+
+.cell {
+  all: unset;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  font-family: var(--font-en);
+  font-size: calc(var(--cell-size) * 0.42);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition: background var(--transition-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cell.is-hidden:hover {
+    background: var(--color-accent-light);
+  }
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  position: relative;
+  z-index: 1;
+}
+
+.cell.is-revealed {
+  background: var(--color-bg-alt);
+  cursor: default;
+}
+
+/* 未開封→開封の一瞬の気持ちよさ。0.15秒の短いポップのみで、
+   数字の可読性を妨げないよう色・ぼかしには一切触れない
+   （scaleとopacityだけ）。地雷セルは別途 is-detonating 等の演出が
+   あるためここでは対象外にする。 */
+@keyframes ms-cell-reveal {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cell.is-revealed:not(.is-mine) {
+  animation: ms-cell-reveal 0.15s ease-out;
+}
+
+.cell.is-mine.is-revealed {
+  background: var(--color-accent-light);
+}
+
+.cell.is-mine.is-exploded {
+  background: #d9c3b4;
+}
+
+/* ---------------------------------- Explosion ---------------------------------- */
+/* 「踏む → 溜め → 爆発 → 余韻」を1本のkeyframeで表現する。
+   パーセンテージは合計 ms-detonate のduration(1300ms)に対する割合。
+   0-150ms: 沈み込み / 150-350ms: 震え(溜め) / 350-800ms: 爆発 / 800-1300ms: 焼け跡へ収束 */
+.cell.is-detonating {
+  animation: ms-detonate 1300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  z-index: 2;
+}
+
+@keyframes ms-detonate {
+  0% {
+    transform: scale(1);
+    background: var(--color-bg-alt);
+    box-shadow: none;
+  }
+  10% {
+    transform: scale(0.8);
+    background: #cdbfa9;
+    box-shadow: inset 0 0 0 2px rgba(20, 40, 63, 0.18);
+  }
+  16% { transform: scale(0.8) translate(-2px, 0); }
+  20% { transform: scale(0.8) translate(2px, 0); }
+  24% { transform: scale(0.8) translate(-1px, 0); }
+  27% { transform: scale(0.8) translate(0, 0); }
+  35% {
+    transform: scale(1.4);
+    background: #fff3d6;
+    box-shadow: 0 0 0 8px rgba(217, 164, 65, 0.35), 0 0 26px 8px rgba(178, 59, 59, 0.45);
+  }
+  55% {
+    transform: scale(1.04);
+    background: #e7cdb8;
+    box-shadow: 0 0 0 2px rgba(178, 59, 59, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    background: #d9c3b4;
+    box-shadow: none;
+  }
+}
+
+.cell.is-shock-neighbor {
+  animation: ms-neighbor-shock 260ms ease-out;
+}
+
+@keyframes ms-neighbor-shock {
+  0% { transform: scale(1); filter: brightness(1); }
+  45% { transform: scale(0.93); filter: brightness(0.95); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.board.is-shaking {
+  animation: ms-board-shake 380ms ease-in-out;
+}
+
+@keyframes ms-board-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 2px); }
+  40% { transform: translate(3px, -2px); }
+  60% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -1px); }
+}
+
+/* 土・草・煙の破片。距離(--dx/--dy)はセルサイズに対する倍率で指定し、
+   難易度が変わってセルサイズが変わっても自然に見えるようにする。 */
+.debris {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--cell-size) * 0.16);
+  height: calc(var(--cell-size) * 0.16);
+  margin-top: calc(var(--cell-size) * -0.08);
+  margin-left: calc(var(--cell-size) * -0.08);
+  border-radius: 2px;
+  background: var(--debris-color, #6b4f37);
+  opacity: 0;
+  pointer-events: none;
+  animation: ms-debris-fly 950ms ease-out both;
+  animation-delay: var(--debris-delay, 340ms);
+}
+
+.debris-smoke {
+  width: calc(var(--cell-size) * 0.55);
+  height: calc(var(--cell-size) * 0.55);
+  margin-top: calc(var(--cell-size) * -0.275);
+  margin-left: calc(var(--cell-size) * -0.275);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(110, 110, 110, 0.55), rgba(110, 110, 110, 0) 70%);
+}
+
+@keyframes ms-debris-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * var(--cell-size)), calc(var(--dy) * var(--cell-size))) scale(0.85) rotate(var(--rot, 90deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.is-detonating,
+  .board.is-shaking,
+  .cell.is-shock-neighbor,
+  .debris {
+    animation: none !important;
+  }
+
+  .cell.is-revealed:not(.is-mine) {
+    animation: none;
+  }
+
+  .pill-btn,
+  .restart-btn,
+  .cell {
+    transition: none;
+  }
+}
+
+.cell.is-wrong {
+  background: var(--color-wrong-bg);
+  color: var(--color-lose);
+}
+
+.cell[data-count="1"] { color: var(--color-accent); }
+.cell[data-count="2"] { color: #2f7d5c; }
+.cell[data-count="3"] { color: #b23b3b; }
+.cell[data-count="4"] { color: #4a3f8f; }
+.cell[data-count="5"] { color: #8a4b1f; }
+.cell[data-count="6"] { color: #1f8a8a; }
+.cell[data-count="7"] { color: var(--color-navy); }
+.cell[data-count="8"] { color: var(--color-text-sub); }
+
+.ms-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-faint);
+}
+
+/* ---------------------------------- Recent Games / Feedback ---------------------------------- */
+
+.ms-divider {
+  width: 100%;
+  max-width: 480px;
+  border: none;
+  border-top: 1px solid var(--color-line);
+  margin: 0;
+}
+
+.ms-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.player-name-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-sub);
+}
+
+.player-name-field input {
+  font: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-width: 180px;
+}
+
+.player-name-field input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.recent-games-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.recent-games-table {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.recent-games-table th,
+.recent-games-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-line);
+  white-space: nowrap;
+}
+
+.recent-games-table th {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  font-weight: 600;
+}
+
+.recent-games-table td:last-child,
+.recent-games-table th:last-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-navy);
+  font-weight: 600;
+  text-align: right;
+}
+
+.recent-games-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-faint);
+}
+
+.feedback-form {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.feedback-field {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  text-align: left;
+}
+
+.feedback-field label {
+  font-size: 0.8rem;
+  color: var(--color-text-sub);
+}
+
+.feedback-optional {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--color-text-faint);
+}
+
+.feedback-required {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--color-accent);
+}
+
+.feedback-field input,
+.feedback-form textarea {
+  width: 100%;
+  font: inherit;
+  padding: 12px 14px;
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.feedback-form textarea {
+  resize: vertical;
+}
+
+.feedback-field input:focus-visible,
+.feedback-form textarea:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.feedback-status {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-sub);
+}
+
+.feedback-status.is-success {
+  color: var(--color-win);
+}
+
+.feedback-status.is-error {
+  color: var(--color-lose);
+}
+
+/* ---------------------------------- Footer ---------------------------------- */
+
+.ms-footer {
+  padding: 24px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--color-text-faint);
+  border-top: 1px solid var(--color-line);
+}
+
+.ms-footer a {
+  color: var(--color-text-sub);
+  transition: color var(--transition-fast);
+}
+
+.ms-footer a:hover,
+.ms-footer a:focus-visible {
+  color: var(--color-accent);
+}
+
+/* ---------------------------------- Responsive ---------------------------------- */
+
+@media (max-width: 600px) {
+  .ms-main {
+    padding: 32px 16px;
+  }
+
+  .status-bar {
+    padding: 14px 16px;
+  }
+
+  .status-value {
+    font-size: 1.2rem;
+  }
+
+  .restart-btn {
+    padding: 9px 16px;
+  }
+}

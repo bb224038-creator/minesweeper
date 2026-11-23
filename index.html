@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minesweeper | Ryoma Noda</title>
+  <meta name="description" content="シンプルなマインスイーパー。初心者・中級者・上級者の3つの難易度から選べます。">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="theme.css">
+  <!-- Classic専用のテーマ(Paper/Steel/Dark Steel)。見づらい場合はこの
+       1行を削除するだけで、Classicは元のデザインに完全に戻ります。 -->
+  <link rel="stylesheet" href="classic-theme.css">
+</head>
+<body>
+
+  <!-- Adventureモードの背景シーン。Classic選択中や、対応しない難易度の
+       ときは theme.css により非表示(opacity:0)のまま。盤面には一切
+       重ならない(position:fixed; z-index:-1)。 -->
+  <div class="theme-scene theme-scene-grassland" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grass-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#dff3ff"/>
+          <stop offset="100%" stop-color="#f3fbef"/>
+        </linearGradient>
+        <radialGradient id="grass-sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff7d6" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#fff7d6" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="1600" height="900" fill="url(#grass-sky)"/>
+      <circle cx="1360" cy="150" r="220" fill="url(#grass-sun)"/>
+      <g fill="#bcd9a4" opacity="0.8">
+        <rect x="180" y="560" width="10" height="40"/>
+        <circle cx="185" cy="545" r="26"/>
+        <rect x="900" y="540" width="10" height="46"/>
+        <circle cx="905" cy="522" r="30"/>
+        <rect x="1180" y="570" width="8" height="34"/>
+        <circle cx="1184" cy="558" r="22"/>
+      </g>
+      <path d="M0,650 Q400,560 800,620 T1600,600 L1600,900 L0,900 Z" fill="#bfe3a8"/>
+      <path d="M0,760 Q500,690 900,735 T1600,720 L1600,900 L0,900 Z" fill="#9ccf7d"/>
+    </svg>
+  </div>
+
+  <div class="theme-scene theme-scene-desert" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="desert-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#fdeecb"/>
+          <stop offset="100%" stop-color="#fff8ec"/>
+        </linearGradient>
+        <radialGradient id="desert-sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffe4a3" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#ffe4a3" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="1600" height="900" fill="url(#desert-sky)"/>
+      <circle cx="260" cy="160" r="200" fill="url(#desert-sun)"/>
+      <g fill="#caa06a" opacity="0.55">
+        <polygon points="1080,640 1180,480 1280,640"/>
+        <polygon points="1220,640 1300,520 1380,640"/>
+      </g>
+      <path d="M0,700 Q450,630 850,680 T1600,660 L1600,900 L0,900 Z" fill="#eccd93"/>
+      <path d="M0,790 Q500,730 950,770 T1600,760 L1600,900 L0,900 Z" fill="#e0b56e"/>
+    </svg>
+  </div>
+
+  <div class="theme-scene theme-scene-volcanic" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="volcano-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2c2128"/>
+          <stop offset="100%" stop-color="#5c3324"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="1600" height="900" fill="url(#volcano-sky)"/>
+
+      <!-- 遠景の小さな峰 -->
+      <polygon points="120,760 300,580 480,760" fill="#453b3e" stroke="#241c1e" stroke-width="4" stroke-linejoin="round" opacity="0.85"/>
+      <polygon points="1140,760 1300,610 1460,760" fill="#453b3e" stroke="#241c1e" stroke-width="4" stroke-linejoin="round" opacity="0.85"/>
+
+      <!-- メインの火山：太い縁取りでシルエットを明確にする -->
+      <polygon points="620,760 950,270 1280,760" fill="#6b5c56" stroke="#2f2422" stroke-width="8" stroke-linejoin="round"/>
+
+      <!-- 溶岩：直線・三角形をやめ、なめらかな曲線のストロークを
+           太→細・暗赤→オレンジ→明るい黄の3層に重ねることで、
+           「中心が明るく縁が暗い、自然に流れる溶岩」を表現する。
+           火山らしい明るいアクセントとして、周囲の岩よりはっきり
+           目立つ発光色にしている。 -->
+      <path d="M950,300 C935,335 965,365 945,405 C928,440 958,465 940,505 C922,545 955,575 935,620 C918,660 948,690 930,760"
+            fill="none" stroke="#9c3316" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M950,300 C935,335 965,365 945,405 C928,440 958,465 940,505 C922,545 955,575 935,620 C918,660 948,690 930,760"
+            fill="none" stroke="#ff6a3a" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="volcano-lava-core" d="M950,300 C935,335 965,365 945,405 C928,440 958,465 940,505 C922,545 955,575 935,620 C918,660 948,690 930,760"
+            fill="none" stroke="#ffc16a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- 火口：三角のとがりをやめ、なめらかな楕円にする -->
+      <ellipse cx="950" cy="298" rx="44" ry="20" fill="#ff7a3d" stroke="#c73f1c" stroke-width="3"/>
+      <ellipse class="volcano-glow" cx="950" cy="298" rx="24" ry="12" fill="#ffd36b"/>
+
+      <path class="volcano-smoke" d="M950,255 Q925,190 955,140 Q980,95 955,40" fill="none" stroke="#8a7d81" stroke-width="16" stroke-linecap="round" opacity="0.4"/>
+
+      <path d="M0,780 L280,700 L520,790 L780,720 L1050,800 L1320,730 L1600,790 L1600,900 L0,900 Z" fill="#2e2224" stroke="#180f10" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <header class="ms-header">
+    <div class="ms-header-inner">
+      <p class="ms-title en">Minesweeper</p>
+    </div>
+  </header>
+
+  <main class="ms-main">
+    <section class="ms-app" aria-labelledby="ms-heading">
+      <h1 id="ms-heading" class="ms-heading">Minesweeper</h1>
+
+      <!-- Adventureの前景挿絵。盤面・ボタンには重ならず、.ms-appの
+           左右の余白付近だけに小さく配置している。幅の狭い画面では
+           theme.cssが非表示にする。 -->
+      <div class="theme-accent theme-accent-grassland" aria-hidden="true">
+        <svg class="accent-icon accent-tree" viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg">
+          <rect x="26" y="46" width="8" height="22" rx="2" fill="#8a6a4a"/>
+          <circle cx="30" cy="34" r="20" fill="#6fae55"/>
+          <circle cx="16" cy="42" r="14" fill="#7fbb63"/>
+          <circle cx="44" cy="42" r="14" fill="#7fbb63"/>
+        </svg>
+        <svg class="accent-icon accent-butterfly" viewBox="0 0 60 46" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="20" cy="18" rx="16" ry="14" fill="#f0a8c8"/>
+          <ellipse cx="40" cy="18" rx="16" ry="14" fill="#f6c6db"/>
+          <ellipse cx="22" cy="30" rx="10" ry="9" fill="#c98bb0" opacity="0.85"/>
+          <ellipse cx="38" cy="30" rx="10" ry="9" fill="#d9a9c6" opacity="0.85"/>
+          <line x1="30" y1="10" x2="30" y2="34" stroke="#4a3f4a" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="30" cy="9" r="2.5" fill="#4a3f4a"/>
+        </svg>
+        <svg class="accent-icon accent-flower" viewBox="0 0 34 44" xmlns="http://www.w3.org/2000/svg">
+          <line x1="17" y1="20" x2="17" y2="42" stroke="#6fae55" stroke-width="3" stroke-linecap="round"/>
+          <g fill="#ffd166">
+            <circle cx="17" cy="6" r="5"/>
+            <circle cx="9" cy="10" r="5"/>
+            <circle cx="25" cy="10" r="5"/>
+            <circle cx="9" cy="18" r="5"/>
+            <circle cx="25" cy="18" r="5"/>
+          </g>
+          <circle cx="17" cy="13" r="5.5" fill="#f4a636"/>
+        </svg>
+        <svg class="accent-icon accent-rock-grassland" viewBox="0 0 44 26" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="22" cy="24" rx="18" ry="3" fill="#c9c2b8" opacity="0.4"/>
+          <path d="M4,20 Q2,10 14,8 Q22,2 32,8 Q42,10 40,20 Q22,26 4,20Z" fill="#a9a49a"/>
+        </svg>
+      </div>
+
+      <div class="theme-accent theme-accent-desert" aria-hidden="true">
+        <svg class="accent-icon accent-camel" viewBox="0 0 90 60" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#c89a63">
+            <ellipse cx="38" cy="34" rx="26" ry="14"/>
+            <ellipse cx="24" cy="24" rx="12" ry="11"/>
+            <ellipse cx="52" cy="22" rx="11" ry="10"/>
+            <rect x="58" y="14" width="9" height="26" rx="4.5" transform="rotate(18 62 27)"/>
+            <ellipse cx="70" cy="14" rx="8" ry="7"/>
+            <rect x="18" y="42" width="6" height="14" rx="3"/>
+            <rect x="32" y="44" width="6" height="14" rx="3"/>
+            <rect x="46" y="44" width="6" height="14" rx="3"/>
+            <rect x="58" y="42" width="6" height="14" rx="3"/>
+          </g>
+          <circle cx="73" cy="12" r="1.6" fill="#4a3320"/>
+        </svg>
+        <svg class="accent-icon accent-cactus" viewBox="0 0 40 56" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#4f7d52">
+            <rect x="14" y="10" width="12" height="44" rx="6"/>
+            <rect x="2" y="20" width="10" height="20" rx="5"/>
+            <rect x="28" y="26" width="10" height="20" rx="5"/>
+          </g>
+          <g stroke="#3a6440" stroke-width="1.5" opacity="0.6">
+            <line x1="17" y1="16" x2="17" y2="48"/>
+            <line x1="23" y1="16" x2="23" y2="48"/>
+          </g>
+        </svg>
+        <svg class="accent-icon accent-rock-desert" viewBox="0 0 44 26" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="22" cy="24" rx="18" ry="3" fill="#caa06a" opacity="0.35"/>
+          <path d="M4,20 Q2,10 14,8 Q22,2 32,8 Q42,10 40,20 Q22,26 4,20Z" fill="#bd9469"/>
+        </svg>
+      </div>
+
+      <div class="theme-accent theme-accent-volcanic" aria-hidden="true">
+        <svg class="accent-icon accent-pillar" viewBox="0 0 30 64" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="4,64 4,20 10,8 20,8 26,20 26,64" fill="#5b5457"/>
+          <rect x="2" y="58" width="26" height="6" rx="1" fill="#454042"/>
+          <rect x="6" y="24" width="18" height="6" fill="#6d666a" opacity="0.6"/>
+          <rect x="6" y="38" width="18" height="6" fill="#6d666a" opacity="0.6"/>
+        </svg>
+        <svg class="accent-icon accent-ember accent-ember-a" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="9" fill="#ff7a3d" opacity="0.85"/>
+          <circle cx="10" cy="10" r="4" fill="#ffd36b"/>
+        </svg>
+        <svg class="accent-icon accent-ember accent-ember-b" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="7" fill="#ff7a3d" opacity="0.85"/>
+          <circle cx="8" cy="8" r="3" fill="#ffd36b"/>
+        </svg>
+        <svg class="accent-icon accent-rock-volcanic" viewBox="0 0 44 26" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4,20 Q2,10 14,8 Q22,2 32,8 Q42,10 40,20 Q22,26 4,20Z" fill="#2f2a2c"/>
+        </svg>
+      </div>
+
+      <div class="selector">
+        <p class="selector-label en" id="mode-label">Game Mode</p>
+        <div class="pill-group" role="group" aria-labelledby="mode-label">
+          <button type="button" class="pill-btn" data-mode="classic" aria-pressed="true">
+            Classic<span class="pill-sub">Classic Minesweeper</span>
+          </button>
+          <button type="button" class="pill-btn" data-mode="meadow" aria-pressed="false">
+            Adventure<span class="pill-sub">Start your adventure.</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="selector">
+        <p class="selector-label en" id="difficulty-label">Difficulty</p>
+        <div class="pill-group" role="group" aria-labelledby="difficulty-label">
+          <button type="button" class="pill-btn" data-difficulty="beginner" aria-pressed="true">
+            初心者<span class="pill-sub">9×9 ・ 10</span>
+          </button>
+          <button type="button" class="pill-btn" data-difficulty="intermediate" aria-pressed="false">
+            中級者<span class="pill-sub">16×16 ・ 40</span>
+          </button>
+          <button type="button" class="pill-btn" data-difficulty="expert" aria-pressed="false">
+            上級者<span class="pill-sub">30×16 ・ 99</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Classicのときだけ表示されるThemeセレクター（classic-theme.cssが
+           制御）。ネイティブのradio inputで選択状態を持たせているため、
+           JavaScriptを一切追加せずに実装している。切り替えてもゲーム
+           状態には何も作用しない（何のイベントリスナーも付いていない
+           ため）。難易度とは独立しており、ユーザーが自由に選べる。 -->
+      <div class="selector classic-theme-selector">
+        <p class="selector-label en" id="classic-theme-label">Theme</p>
+        <div class="pill-group" role="radiogroup" aria-labelledby="classic-theme-label">
+          <label class="pill-btn theme-pill en">
+            <input type="radio" name="classic-theme" value="simple" class="theme-radio" checked>
+            Simple
+          </label>
+          <label class="pill-btn theme-pill en">
+            <input type="radio" name="classic-theme" value="steel" class="theme-radio">
+            Steel
+          </label>
+          <label class="pill-btn theme-pill en">
+            <input type="radio" name="classic-theme" value="paper" class="theme-radio">
+            Paper
+          </label>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-item">
+          <span class="status-label">残り地雷</span>
+          <span class="status-value" id="mines-count">10</span>
+        </div>
+
+        <button type="button" class="restart-btn" id="restart-btn" aria-label="リスタート">
+          <span aria-hidden="true">&#8635;</span> リスタート
+        </button>
+
+        <div class="status-item">
+          <span class="status-label">経過時間</span>
+          <span class="status-value" id="timer-value">00:00</span>
+        </div>
+      </div>
+
+      <!-- Personal Best：Mode×Difficulty単位（Theme非依存）でlocalStorageに
+           保存する自己ベスト。表示・記録はminesweeper/personal-best.jsが
+           #ms-message と #board のクラス変化を監視するだけで行っており、
+           game.jsには一切手を加えていない。 -->
+      <div class="personal-best-bar">
+        <div class="status-item">
+          <span class="status-label en personal-best-label">
+            <svg class="personal-best-crown" viewBox="0 0 24 20" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6,15 L3,8 L8,11 L12,5 L16,11 L21,8 L18,15 Z" fill="currentColor"/>
+            </svg>
+            Personal Best
+          </span>
+          <span class="status-value" id="personal-best-value">--:--</span>
+        </div>
+      </div>
+      <p class="ms-message is-win personal-best-new" id="personal-best-new" role="status" aria-live="polite" hidden></p>
+
+      <div class="selector">
+        <p class="selector-label en" id="action-label">Action</p>
+        <div class="pill-group" role="group" aria-labelledby="action-label">
+          <button type="button" class="pill-btn action-btn en" data-action="dig" aria-pressed="true">
+            <span aria-hidden="true">⛏</span> DIG
+          </button>
+          <button type="button" class="pill-btn action-btn en" data-action="flag" aria-pressed="false">
+            <span aria-hidden="true">🚩</span> FLAG
+          </button>
+        </div>
+      </div>
+
+      <p class="ms-message" id="ms-message" role="status" aria-live="polite"></p>
+
+      <!-- Share Score：クリア後のみ表示（minesweeper/share-score.jsが
+           #ms-message の変化を監視して表示/非表示を切り替える）。
+           Web Share API対応時は共有、非対応時はクリップボードへコピー。
+           game.js/personal-best.jsのロジックには一切触れていない。 -->
+      <div class="share-score-bar" id="share-score-bar" hidden>
+        <button type="button" class="restart-btn share-score-btn" id="share-score-btn">
+          <svg class="share-score-icon share-score-icon-share" viewBox="0 0 20 20" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="15" cy="5" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <circle cx="5" cy="10" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <circle cx="15" cy="15" r="2.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <line x1="7" y1="8.8" x2="13" y2="6.2" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="7" y1="11.2" x2="13" y2="13.8" stroke="currentColor" stroke-width="1.3"/>
+          </svg>
+          <svg class="share-score-icon share-score-icon-copy" viewBox="0 0 20 20" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" hidden>
+            <rect x="7" y="7" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <rect x="3" y="3" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+          <span id="share-score-label">Share Score</span>
+        </button>
+        <p class="share-score-status" id="share-score-status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="board-wrapper">
+        <div class="board" id="board" role="grid" aria-label="マインスイーパー盤面"></div>
+      </div>
+
+      <p class="ms-hint">PC：左クリックは選択中のアクション／右クリックは常に旗　・　スマホ：タップは選択中のアクション／長押しは常に旗</p>
+
+      <hr class="ms-divider">
+
+      <section class="ms-panel" aria-labelledby="recent-games-label">
+        <p class="selector-label en" id="recent-games-label">Recent Games</p>
+
+        <div class="player-name-field">
+          <label for="player-name">お名前</label>
+          <input type="text" id="player-name" maxlength="20" placeholder="ニックネームを入力（省略可）" autocomplete="off">
+        </div>
+
+        <div class="recent-games-wrapper">
+          <table class="recent-games-table" id="recent-games-table" aria-label="最近のプレイ記録" hidden>
+            <thead>
+              <tr>
+                <th scope="col">名前</th>
+                <th scope="col">モード・難易度</th>
+                <th scope="col">タイム</th>
+              </tr>
+            </thead>
+            <tbody id="recent-games-body"></tbody>
+          </table>
+          <p class="recent-games-empty" id="recent-games-empty">まだ記録がありません。クリアすると記録されます。</p>
+        </div>
+
+        <p class="ms-hint">※ このブラウザにのみ保存される最新5件です（他の人とは共有されません）</p>
+      </section>
+
+      <hr class="ms-divider">
+
+      <section class="ms-panel" aria-labelledby="feedback-label">
+        <p class="selector-label en" id="feedback-label">Feedback</p>
+
+        <form class="feedback-form" id="feedback-form" action="https://formspree.io/f/mjyvvvyg" method="POST">
+          <div class="feedback-field">
+            <label for="feedback-name">お名前<span class="feedback-optional">（任意）</span></label>
+            <input type="text" id="feedback-name" name="name" maxlength="40" placeholder="お名前" autocomplete="name">
+          </div>
+
+          <div class="feedback-field">
+            <label for="feedback-email">メールアドレス<span class="feedback-optional">（任意・返信が欲しい場合のみ）</span></label>
+            <input type="email" id="feedback-email" name="email" maxlength="100" placeholder="返信が欲しい場合のみ入力してください" autocomplete="email">
+          </div>
+
+          <div class="feedback-field">
+            <label for="feedback-text">ご要望・改善案<span class="feedback-required">（必須）</span></label>
+            <textarea id="feedback-text" name="message" rows="4" maxlength="1000" placeholder="ご要望・改善案を入力してください" required></textarea>
+          </div>
+
+          <button type="submit" class="restart-btn">送信</button>
+          <p class="feedback-status" id="feedback-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <footer class="ms-footer">
+    <p>製作者：Ryoma Noda</p>
+  </footer>
+
+  <script src="game.js" defer></script>
+  <script src="extras.js" defer></script>
+  <script src="personal-best.js" defer></script>
+  <script src="share-score.js" defer></script>
+</body>
+</html>

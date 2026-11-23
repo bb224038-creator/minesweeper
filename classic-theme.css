@@ -1,0 +1,314 @@
+/*
+  classic-theme.css — Classicモードの「ユーザーが選ぶTheme」。
+  Simple / Steel / Paper の3種類。
+
+  【今回の設計変更】
+  以前は難易度(Beginner/Intermediate/Expert)に連動して自動でテーマが
+  切り替わる方式だったが、今回からは <div class="classic-theme-selector">
+  内のTHEMEセレクターでユーザー自身が自由に選べる方式にした。
+  難易度とは完全に独立している。
+
+  【JavaScriptを追加していない理由】
+  THEMEセレクターはボタンではなく、ネイティブの<input type="radio">を
+  .pill-btnと同じ見た目に被せているだけ（index.html参照）。ラジオボタン
+  はブラウザが標準で「1つだけ選択状態を持つ」機能を提供するため、
+  選択の切り替えにJavaScriptが一切不要。イベントリスナーも何も
+  付いていないので、Themeを切り替えてもゲームの状態（盤面・タイマー・
+  旗など）には物理的に何も作用しない。game.js/extras.jsは無変更。
+
+  【このファイルの構成】
+  1) 各テーマのブロックで --board-*（盤面用、theme.cssが消費）と
+     --classic-*（ページ全体用、このファイル自身が消費）という
+     カスタムプロパティを定義する。
+  2) THEMEセレクターの表示制御とradioのピル風スタイリング。
+  3) ページ全体への適用ルール（3テーマ共通）。
+
+  「Simple」は意図的に何もカスタムプロパティを定義していない。
+  すべてのvar(--classic-xxx, 元の値)が元の値にフォールバックする
+  ため、Simple = style.cssがもともと定義している見た目そのもの
+  （＝最も安全な「元に戻す」選択肢）になる。
+
+  【ロールバック方法】
+  見づらくなった場合は、index.html からこのファイルの
+  <link rel="stylesheet" href="classic-theme.css"> の1行を削除する
+  だけで、Classicは完全に元のデザインに戻る（THEMEセレクター自体も
+  非表示になる）。style.css・theme.css は一切変更していないため、
+  Adventureの3マップ（Grassland/Desert/Volcanic）やゲーム機能には
+  影響しない。
+
+  【今後の拡張】
+  Dark / High Contrast / Retro などを追加する場合は、
+  index.htmlのTHEMEセレクターに<label class="pill-btn theme-pill">を
+  1つ増やし、このファイルに対応する
+  body:has(...):has(input[name="classic-theme"][value="dark"]:checked)
+  ブロックを1つ追加するだけでよい。
+*/
+
+/* ---------------------------------- Steel ---------------------------------- */
+/* シルバー〜ライトグレーの金属パネル。控えめな立体感（浮き出た
+   タイルのような陰影）を付ける。文字は濃いチャコール。 */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]):has(input[name="classic-theme"][value="steel"]:checked) {
+  --board-hidden-bg: #a8aeb6;
+  --board-hidden-hover-bg: #b9bfc6;
+  --board-revealed-bg: #dde1e5;
+  --board-grid-line: #6f7680;
+  --board-cell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 3px rgba(0, 0, 0, 0.18);
+  --board-count-2: #1f5940;
+  --board-count-3: #a83434;
+  --board-count-6: #125c5c;
+
+  --classic-page-bg: #d7dbdf;
+  --classic-panel-bg: #eceef0;
+  --classic-panel-border: #9aa1aa;
+  --classic-app-padding: 28px 20px;
+  --classic-app-radius: 20px;
+  --classic-app-border: 1px solid var(--classic-panel-border);
+  --classic-text-strong: #21262c;
+  --classic-text-mid: #4d545c;
+  --classic-text-faint: #616870;
+  --classic-accent-bg: #3d444c;
+  --classic-accent-text: #f4f6f8;
+  --classic-win: #256a4d;
+  --classic-lose: #b23b3b;
+}
+
+/* ---------------------------------- Paper ---------------------------------- */
+/* 紙・ボードゲームのような、暖色系のオフホワイト＋ベージュ。
+   3テーマの中で最も柔らかい印象にする。 */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]):has(input[name="classic-theme"][value="paper"]:checked) {
+  --board-hidden-bg: #fdfcf9;
+  --board-hidden-hover-bg: #f5f1e8;
+  --board-revealed-bg: #e6e0d2;
+  --board-grid-line: #b0a692;
+  --board-cell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+  --board-count-2: #1f5940;
+  --board-count-3: #a83434;
+  --board-count-6: #125c5c;
+
+  --classic-page-bg: #faf7f0;
+  --classic-panel-bg: #fffefb;
+  --classic-panel-border: #ddd4c0;
+  --classic-app-padding: 28px 20px;
+  --classic-app-radius: 20px;
+  --classic-app-border: 1px solid var(--classic-panel-border);
+  --classic-text-strong: #3a3226;
+  --classic-text-mid: #6b6252;
+  --classic-text-faint: #86795f;
+  --classic-accent-bg: #3a3226;
+  --classic-accent-text: #fffefb;
+  --classic-win: #2f7d5c;
+  --classic-lose: #b23b3b;
+}
+
+/* Simpleはここでは何も定義しない（ファイル冒頭のコメント参照）。 */
+
+/* ==================================================================
+   THEMEセレクター自体の表示・スタイル
+   ================================================================== */
+
+/* Classicが選択されているときだけ表示する。Adventureでは非表示
+   （＝Adventureは従来通り難易度でマップが決まる仕組みのまま）。 */
+.classic-theme-selector {
+  display: none;
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .classic-theme-selector {
+  display: flex;
+}
+
+/* .pill-btn(button)と同じ見た目を<label>に適用する。中のradioは
+   視覚的には隠すが、フォーカス・キーボード操作は可能なままにする
+   （いわゆる visually-hidden 手法。display:noneにはしない）。 */
+.theme-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.theme-pill {
+  position: relative;
+}
+
+/* 未選択のTHEME pillの文字色（Theme別）。
+   ※ここは後段「ページ全体への適用」セクションの汎用 .pill-btn 用
+   ルールと同じ内容だが、下の「選択中」ルールとの詳細度を揃えて
+   意図した優先順位で確実に上書きされるよう、あえて同じ
+   body:has(...) 接頭辞を付けて明示的に定義している。 */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .theme-pill {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .theme-pill:hover {
+  color: var(--classic-text-strong, var(--color-navy));
+}
+
+/* 選択中のTHEME pill：背景・文字色ともに強制する。
+   注意: 後段「ページ全体への適用」セクションにある汎用の
+   `.pill-btn { color: var(--classic-text-mid, ...); }` は、単なる
+   `body:has(...) .pill-btn` よりも詳細度が高い `body:has(...)
+   .theme-pill:has(...)` を使わないと、選択中でも背景色だけ変わって
+   文字色が変わらない（＝文字が背景に埋もれる）不具合が起きるため、
+   ここで意図的に強く指定している。hover時も選択状態の配色を維持する。 */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .theme-pill:has(.theme-radio:checked),
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .theme-pill:has(.theme-radio:checked):hover {
+  background: var(--classic-accent-bg, var(--color-navy));
+  color: var(--classic-accent-text, #ffffff);
+}
+
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .theme-pill:has(.theme-radio:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ==================================================================
+   ページ全体への適用（3テーマ共通のルール）
+   ------------------------------------------------------------------
+   上のテーマブロックは「どの色を使うか」の定義のみ。ここでその値を
+   実際の要素に当てはめる。Simpleが選ばれているときはどの
+   --classic-*/--board-* も未定義のままなので、下のvar()はすべて
+   フォールバック（＝元のstyle.cssの値）に解決される。
+   Classicモードが選択されていない（＝Adventureが選択されている）
+   ときはこれらのセレクタ自体がマッチしないため、Adventureの3マップ
+   には一切影響しない。
+   ================================================================== */
+
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) {
+  background: var(--classic-page-bg, var(--color-bg));
+}
+
+/* ヘッダー／ゲームカード／フッターのパネル */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-header {
+  background: var(--classic-panel-bg, transparent);
+  border-bottom-color: var(--classic-panel-border, var(--color-line));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-title {
+  color: var(--classic-text-strong, var(--color-navy));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-app {
+  background: var(--classic-panel-bg, transparent);
+  border: var(--classic-app-border, none);
+  border-radius: var(--classic-app-radius, 0px);
+  padding: var(--classic-app-padding, 0px);
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-heading {
+  color: var(--classic-text-strong, var(--color-navy));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-footer {
+  background: var(--classic-panel-bg, transparent);
+  border-top-color: var(--classic-panel-border, var(--color-line));
+}
+
+/* GAME MODE / DIFFICULTY / THEME / ACTION のピル型ボタン */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .selector-label {
+  color: var(--classic-text-mid, var(--color-text-faint));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .pill-group {
+  background: var(--classic-panel-bg, var(--color-bg-alt));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .pill-btn {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .pill-btn:hover {
+  color: var(--classic-text-strong, var(--color-navy));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .pill-btn[aria-pressed="true"] {
+  background: var(--classic-accent-bg, var(--color-navy));
+  color: var(--classic-accent-text, #ffffff);
+}
+
+/* ステータスバー（残り地雷／リスタート／経過時間） */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .status-bar {
+  background: var(--classic-panel-bg, transparent);
+  border-color: var(--classic-panel-border, var(--color-line));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .status-label {
+  color: var(--classic-text-faint, var(--color-text-faint));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .status-value {
+  color: var(--classic-text-strong, var(--color-navy));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .restart-btn {
+  background: var(--classic-page-bg, var(--color-bg));
+  border-color: var(--classic-panel-border, var(--color-line));
+  color: var(--classic-text-strong, var(--color-navy));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .restart-btn:hover,
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .restart-btn:focus-visible {
+  background: var(--classic-accent-bg, var(--color-navy));
+  border-color: var(--classic-accent-bg, var(--color-navy));
+  color: var(--classic-accent-text, #ffffff);
+}
+
+/* 勝敗メッセージ・ヒント・区切り線 */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-message {
+  color: var(--classic-text-strong, var(--color-accent));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-message.is-win {
+  color: var(--classic-win, var(--color-win));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-message.is-lose {
+  color: var(--classic-lose, var(--color-lose));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-hint {
+  color: var(--classic-text-faint, var(--color-text-faint));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-divider {
+  border-top-color: var(--classic-panel-border, var(--color-line));
+}
+
+/* Recent Games */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .player-name-field {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .player-name-field input,
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-field input,
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-form textarea {
+  background: var(--classic-panel-bg, var(--color-bg));
+  border-color: var(--classic-panel-border, var(--color-line));
+  color: var(--classic-text-strong, var(--color-text));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .recent-games-table th {
+  color: var(--classic-text-faint, var(--color-text-faint));
+  border-bottom-color: var(--classic-panel-border, var(--color-line));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .recent-games-table td {
+  color: var(--classic-text-strong, var(--color-text));
+  border-bottom-color: var(--classic-panel-border, var(--color-line));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .recent-games-empty {
+  color: var(--classic-text-faint, var(--color-text-faint));
+}
+
+/* Feedback */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-field label {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-optional {
+  color: var(--classic-text-faint, var(--color-text-faint));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-required {
+  color: var(--classic-accent-bg, var(--color-accent));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-status,
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .share-score-status {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-status.is-success {
+  color: var(--classic-win, var(--color-win));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .feedback-status.is-error {
+  color: var(--classic-lose, var(--color-lose));
+}
+
+/* フッターのリンク */
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-footer a {
+  color: var(--classic-text-mid, var(--color-text-sub));
+}
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-footer a:hover,
+body:has(.pill-btn[data-mode="classic"][aria-pressed="true"]) .ms-footer a:focus-visible {
+  color: var(--classic-text-strong, var(--color-accent));
+}
